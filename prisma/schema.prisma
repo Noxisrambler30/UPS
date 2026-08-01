@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum RequestStatus {
+  PENDING
+  QUOTED
+  APPROVED
+  BILLED
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  phone     String
+  email     String    @unique
+  password  String
+  role      Role      @default(CUSTOMER)
+  requests  Request[]
+  createdAt DateTime  @default(now())
+}
+
+model Request {
+  id              Int              @id @default(autoincrement())
+  uniqueCode      String           @unique
+  power           String
+  backup          String
+  phase           String
+  status          RequestStatus    @default(PENDING)
+  customer        User             @relation(fields: [customerId], references: [id])
+  customerId      Int
+  quote           Quote?
+  bill            Bill?
+  serviceRequests ServiceRequest[]
+  createdAt       DateTime         @default(now())
+}
+
+model Quote {
+  id          Int      @id @default(autoincrement())
+  request     Request  @relation(fields: [requestId], references: [id])
+  requestId   Int      @unique
+  amount      Float
+  items       String
+  pdfPublicId String
+  pdfUrl      String
+  sentAt      DateTime @default(now())
+}
+
+model Bill {
+  id          Int      @id @default(autoincrement())
+  request     Request  @relation(fields: [requestId], references: [id])
+  requestId   Int      @unique
+  amount      Float
+  pdfPublicId String
+  pdfUrl      String
+  approvedAt  DateTime @default(now())
+}
+
+model ServiceRequest {
+  id        Int           @id @default(autoincrement())
+  request   Request       @relation(fields: [requestId], references: [id])
+  requestId Int
+  issue     String
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+}
